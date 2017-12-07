@@ -1,7 +1,7 @@
 //Lua.go
 
 //Defines how the lua's virtual machine works
-package luaApi
+package base
 
 import (
 	"fmt"
@@ -21,8 +21,10 @@ var (
 type PreloadFunc func(L *lua.LState) error
 
 func exec(L *lua.LState, script string, isFile bool, preload PreloadFunc) error {
-	if err := preload(L); err != nil {
-		return err
+	if preload != nil {
+		if err := preload(L); err != nil {
+			return err
+		}
 	}
 	if isFile {
 		return L.DoFile(script)
@@ -42,6 +44,7 @@ func DoFileOnce(filepath string, preload PreloadFunc) error {
 	return exec(L, filepath, true, preload)
 }
 
+//preload can be nil
 func DoScriptInLuaVM(id int, script string, preload PreloadFunc) error {
 	return defaultLVMs.DoScriptInLuaVM(id, script, preload)
 }

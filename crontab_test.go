@@ -1,6 +1,6 @@
 //Lua.go
 
-package luaApi
+package base
 
 import (
 	"fmt"

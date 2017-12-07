@@ -1,7 +1,7 @@
 // build ignore
 // 实现在lua脚本中打印log到文件，方便调试.
 // 未完成
-package luaApi
+package base
 
 import (
 	"log"
@@ -24,15 +24,14 @@ func init() {
 	logger = newL()
 }
 
-func LoadLogger(L0 *lua.LState, instance Logger) {
-	if instance == nil {
-		instance = logger
-	} else {
-		logger = instance
-	}
+func SetLogger(l Logger) {
+	logger = l
+}
+
+func LoadLogger(L0 *lua.LState) {
 
 	fucs := make(map[string]lua.LGFunction)
-	ParseStruct(instance, fucs)
+	ParseStruct(logger, fucs)
 	L0.PreloadModule("log", func(L *lua.LState) int {
 		t := L.NewTable()
 		L.SetFuncs(t, fucs)

@@ -1,7 +1,7 @@
 //Lua.go
 
 //Read the task configuration, and if there is an update, recreate the crontab
-package luaApi
+package base
 
 import (
 	"fmt"
@@ -121,10 +121,12 @@ func (c *Crontab) Load(cronFile string, plf PreloadFunc) error {
 		c.task = nil
 	}
 	c.task = cron.New()
+	c.task.ErrorLog = logger
 	c.task.Start()
 
 	for _, job := range c.cur {
 		c.task.AddFunc(job.Spec(), job.Cmd(plf))
+		logger.Info("reload crontab for task: %v", job)
 	}
 	logger.Info("reload crontab for %d tasks", len(c.cur))
 	return nil

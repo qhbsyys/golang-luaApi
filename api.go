@@ -1,7 +1,7 @@
 //
 
 //
-package luaApi
+package base
 
 import (
 	"encoding/json"
@@ -94,10 +94,14 @@ func ParseStruct(s interface{}, funcs map[string]lua.LGFunction) {
 }
 
 func RegisterUserData(L *lua.LState, demo interface{}) {
+	tpName := lowerTypeName(demo)
+	if L.GetTypeMetatable(tpName) != lua.LNil {
+		return //had Register
+	}
+
 	if reflect.TypeOf(demo).Kind() == reflect.Ptr {
 		demo = reflect.ValueOf(demo).Elem().Interface()
 	}
-	tpName := lowerTypeName(demo)
 	logger.Debug("RegisterUserData:%s", tpName)
 	tps := reflect.TypeOf(demo)
 	mt := L.NewTypeMetatable(tpName)
@@ -224,18 +228,22 @@ func CheckGetInputs(L *lua.LState, f reflect.Type) ([]reflect.Value, error) {
 		if err != nil {
 			return []reflect.Value{}, err
 		}
-		if argv.Type() == f.In(i) {
+		if argv.IsValid() && argv.Type() == f.In(i) {
 			inputs = append(inputs, argv)
 		} else {
 			n := numIn - atLeastNumIn
 			last := reflect.MakeSlice(f.In(i), n, n)
-			last.Index(0).Set(argv)
+			if argv.IsValid() {
+				last.Index(0).Set(argv)
+			}
 			for j := 1; j < n; j++ {
 				argv2, err := ParseLValue(L, L.CheckAny(i+j+1), f.In(i).Elem())
 				if err != nil {
 					return []reflect.Value{}, err
 				}
-				last.Index(j).Set(argv2)
+				if argv2.IsValid() {
+					last.Index(j).Set(argv2)
+				}
 			}
 			inputs = append(inputs, last)
 		}
@@ -279,12 +287,16 @@ func lowerTypeName(v interface{}) string {
 //     expects[0]=ret.Type().Elem() expects[1]=ret.Type()
 func ParseLValue(L *lua.LState, v lua.LValue, expects ...reflect.Type) (ret reflect.Value, err error) {
 	ret = lua2GoValue(L, v)
-	tp := ret.Type()
-	expKd := expects[0].Kind()
 	if !ret.IsValid() {
-		err = fmt.Errorf("invalid value type, expect %v, got nil.", expKd)
+		if expects[0].Kind() == reflect.Interface {
+			return
+		}
+		err = fmt.Errorf("invalid value type, expect %v, got nil.", expects)
 		return
 	}
+
+	tp := ret.Type()
+	expKd := expects[0].Kind()
 
 	match := true
 	switch tp.Kind() {

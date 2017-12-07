@@ -1,6 +1,6 @@
 //
 
-package luaApi
+package base
 
 import (
 	"strings"
