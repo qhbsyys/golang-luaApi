@@ -379,7 +379,7 @@ func lua2GoValue(L *lua.LState, v lua.LValue) (ret reflect.Value) {
 			}
 			ret = gv
 		} else {
-			gv := make(map[interface{}]interface{})
+			gv := make(map[string]string)
 			gluamapper.Map(v.(*lua.LTable), &gv)
 			ret = reflect.ValueOf(gv)
 		}
